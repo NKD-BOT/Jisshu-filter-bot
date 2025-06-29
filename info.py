@@ -53,7 +53,7 @@ FILES_DATABASE = environ.get("FILES_DATABASE", "")
 COLLECTION_NAME = environ.get("COLLECTION_NAME", "jisshu")
 
 # Other Channel's
-SUPPORT_GROUP = int(environ.get("SUPPORT_GROUP", "-1002201119181"))
+SUPPORT_GROUP = int(environ.get("SUPPORT_GROUP", "-1002435214785"))
 DELETE_CHANNELS = int(environ.get("DELETE_CHANNELS", "-1002421825139"))
 request_channel = environ.get("REQUEST_CHANNEL", "-1002076321803")
 REQUEST_CHANNEL = (
