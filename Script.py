@@ -117,7 +117,9 @@ User - {}"""
 ⭐ Rating: {rating} / 10</b>
 """
 
-    FILE_CAPTION = """<b>{file_caption}</b>"""
+    FILE_CAPTION = """<b><a href='https://t.me/Nkdcrazy'>{file_caption}</a></b>
+
+Provided by 𝖩𝗈𝗂𝗇➥ - <b><a href='https://t.me/Nkdcrazy'>kdi ᴅʀᴀᴍᴀ</a></b>"""
 
     ALRT_TXT = """ᴡʜᴀᴛ ᴀʀᴇ ʏᴏᴜ sᴇᴀʀᴄʜɪɴɢ !?"""
 
