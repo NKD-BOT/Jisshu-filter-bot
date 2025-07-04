@@ -86,8 +86,8 @@ SHORTENER_API3 = environ.get(
     "SHORTENER_API3", "3097623f852197a9ce40d1212aaa8bbf2803e799"
 )
 SHORTENER_WEBSITE3 = environ.get("SHORTENER_WEBSITE3", "omegalinks.in")
-TWO_VERIFY_GAP = int(environ.get("TWO_VERIFY_GAP", "14400"))
-THREE_VERIFY_GAP = int(environ.get("THREE_VERIFY_GAP", "14400"))
+TWO_VERIFY_GAP = int(environ.get("TWO_VERIFY_GAP", "43200"))
+THREE_VERIFY_GAP = int(environ.get("THREE_VERIFY_GAP", "43200"))
 
 # Language & Quality & Season & Year
 LANGUAGES = [
