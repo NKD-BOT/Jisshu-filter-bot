@@ -1,252 +1,338 @@
-# --| Modified for Jisshu Repo (SilentX + DreamX Features) |--#
+# --| This code created by: Jisshu_bots & SilentXBotz |--#
 import re
-import logging
+import hashlib
 import asyncio
-from datetime import datetime
-from collections import defaultdict
-from plugins.helper.Imdbposter import get_movie_detailsx, fetch_image, get_movie_details
+from info import *
+from utils import *
+from pyrogram import Client, filters
 from database.users_chats_db import db
-from pyrogram import Client, filters, enums
-from info import CHANNELS, MOVIE_UPDATE_CHANNEL, LINK_PREVIEW, ABOVE_PREVIEW, BAD_WORDS, LANDSCAPE_POSTER, TMDB_POSTER, LOG_CHANNEL
-from Script import script
-from database.ia_filterdb import save_file
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from utils import temp
-from pymongo.errors import PyMongoError, DuplicateKeyError
-from pyrogram.errors import MessageIdInvalid, MessageNotModified, FloodWait
-from typing import Optional, Tuple
+from database.ia_filterdb import save_file, unpack_new_file_id
+import aiohttp
+from typing import Optional
+from collections import defaultdict
 
-logger = logging.getLogger(__name__)
+CAPTION_LANGUAGES = [
+    "Bhojpuri",
+    "Hindi",
+    "Bengali",
+    "Tamil",
+    "English",
+    "Bangla",
+    "Telugu",
+    "Malayalam",
+    "Kannada",
+    "Marathi",
+    "Punjabi",
+    "Bengoli",
+    "Gujrati",
+    "Korean",
+    "Gujarati",
+    "Spanish",
+    "French",
+    "German",
+    "Chinese",
+    "Arabic",
+    "Portuguese",
+    "Russian",
+    "Japanese",
+    "Odia",
+    "Assamese",
+    "Urdu",
+]
 
-# ==============================
-# CONSTANTS + CONFIG
-# ==============================
-IGNORE_WORDS = {
-    "rarbg", "dub", "sub", "sample", "mkv", "aac", "combined",
-    "action", "adventure", "animation", "biography", "comedy", "crime",
-    "documentary", "drama", "family", "fantasy", "film-noir", "history",
-    "horror", "music", "musical", "mystery", "romance", "sci-fi", "sport",
-    "thriller", "war", "western", "hdcam", "hdtc", "camrip", "ts", "tc",
-    "telesync", "dvdscr", "dvdrip", "predvd", "webrip", "web-dl", "tvrip",
-    "hdtv", "web dl", "webdl", "bluray", "brrip", "bdrip", "360p", "480p",
-    "720p", "1080p", "2160p", "4k", "1440p", "540p", "240p", "140p", "hevc",
-    "hdrip", "hin", "hindi", "tam", "tamil", "kan", "kannada", "tel", "telugu",
-    "mal", "malayalam", "eng", "english", "pun", "punjabi", "ben", "bengali",
-    "mar", "marathi", "guj", "gujarati", "urd", "urdu", "kor", "korean", "jpn",
-    "japanese", "nf", "netflix", "sonyliv", "sony", "sliv", "amzn", "prime",
-    "primevideo", "hotstar", "zee5", "jio", "jhs", "aha", "hbo", "paramount",
-    "apple", "hoichoi", "sunnxt", "viki"
-} | BAD_WORDS
+UPDATE_CAPTION = """<b>𝖭𝖤𝖶 {} 𝖠𝖣𝖣𝖤𝖣 ✅</b>
 
-CAPTION_LANGUAGES = {
-    "hin": "Hindi", "hindi": "Hindi",
-    "tam": "Tamil", "tamil": "Tamil",
-    "kan": "Kannada", "kannada": "Kannada",
-    "tel": "Telugu", "telugu": "Telugu",
-    "mal": "Malayalam", "malayalam": "Malayalam",
-    "eng": "English", "english": "English",
-    "pun": "Punjabi", "punjabi": "Punjabi",
-    "ben": "Bengali", "bengali": "Bengali",
-    "mar": "Marathi", "marathi": "Marathi",
-    "guj": "Gujarati", "gujarati": "Gujarati",
-    "urd": "Urdu", "urdu": "Urdu",
-    "kor": "Korean", "korean": "Korean",
-    "jpn": "Japanese", "japanese": "Japanese",
-}
+🎬 <b>{} {}</b>
+🔰 <b>Quality:</b> {}
+🎧 <b>Audio:</b> {}
 
-OTT_PLATFORMS = {
-    "nf": "Netflix", "netflix": "Netflix",
-    "sonyliv": "SonyLiv", "sony": "SonyLiv", "sliv": "SonyLiv",
-    "amzn": "Amazon Prime Video", "prime": "Amazon Prime Video", "primevideo": "Amazon Prime Video",
-    "hotstar": "Disney+ Hotstar", "zee5": "Zee5",
-    "jio": "JioHotstar", "jhs": "JioHotstar",
-    "aha": "Aha", "hbo": "HBO Max", "paramount": "Paramount+",
-    "apple": "Apple TV+", "hoichoi": "Hoichoi", "sunnxt": "Sun NXT", "viki": "Viki"
-}
+<b>✨ Telegram Files ✨</b>
 
-STANDARD_GENRES = {
-    'Action', 'Adventure', 'Animation', 'Biography', 'Comedy', 'Crime', 'Documentary',
-    'Drama', 'Family', 'Fantasy', 'Film-Noir', 'History', 'Horror', 'Music',
-    'Musical', 'Mystery', 'Romance', 'Sci-Fi', 'Sport', 'Thriller', 'War', 'Western'
-}
+{}
 
-# Regex Patterns
-CLEAN_PATTERN = re.compile(r'@[^ \n\r\t\.,:;!?()\[\]{}<>\\/"\'=_%]+|\bwww\.[^\s\]\)]+')
-NORMALIZE_PATTERN = re.compile(r"[._]+|[()\[\]{}:;'–!,.?_]")
-QUALITY_PATTERN = re.compile(r"\b(?:480p|720p|1080p|2160p|4k|hevc|hdrip|webrip|web-dl|bluray|hdtv)\b", re.IGNORECASE)
-YEAR_PATTERN = re.compile(r"(19|20)\d{2}")
+<blockquote>〽️ Powered by @CARZYHUBXBOT</b></blockquote>"""
 
-MEDIA_FILTER = filters.document | filters.video | filters.audio
-locks = defaultdict(asyncio.Lock)
-pending_updates = {}
+QUALITY_CAPTION = """📦 {} : {}\n"""
 
-# ==============================
-# HELPER FUNCTIONS
-# ==============================
-def clean_mentions_links(text: str) -> str:
-    return CLEAN_PATTERN.sub("", text or "").strip()
+notified_movies = set()
+movie_files = defaultdict(list)
+POST_DELAY = 10
+processing_movies = set()
 
-def normalize(s: str) -> str:
-    s = NORMALIZE_PATTERN.sub(" ", s)
-    return re.sub(r"\s+", " ", s).strip()
+media_filter = filters.document | filters.video | filters.audio
 
-def remove_ignored_words(text: str) -> str:
-    IGNORE_WORDS_LOWER = {w.lower() for w in IGNORE_WORDS}
-    return " ".join(word for word in text.split() if word.lower() not in IGNORE_WORDS_LOWER)
 
-def get_qualities(text: str) -> str:
-    qualities = QUALITY_PATTERN.findall(text)
-    return ", ".join(qualities) if qualities else "N/A"
+@Client.on_message(filters.chat(CHANNELS) & media_filter)
+async def media(bot, message):
+    bot_id = bot.me.id
+    media = getattr(message, message.media.value, None)
+    if media.mime_type in ["video/mp4", "video/x-matroska", "document/mp4"]:
+        media.file_type = message.media.value
+        media.caption = message.caption
+        success_sts = await save_file(media)
+        if success_sts == "suc" and await db.get_send_movie_update_status(bot_id):
+            file_id, file_ref = unpack_new_file_id(media.file_id)
+            await queue_movie_file(bot, media)
 
-def extract_ott_platform(text: str) -> str:
-    text = text.lower()
-    platforms = {plat for key, plat in OTT_PLATFORMS.items() if key in text}
-    return " | ".join(platforms) if platforms else "N/A"
 
-# ==============================
-# MAIN HANDLER
-# ==============================
-@Client.on_message(filters.chat(CHANNELS) & MEDIA_FILTER)
-async def media_handler(bot, message):
-    media = next(
-        (getattr(message, ft) for ft in ("document", "video", "audio")
-         if getattr(message, ft, None)),
-        None
-    )
-    if not media:
-        return
-
-    media.caption = message.caption or ""
-    success, info = await save_file(media)
-    if not success:
-        return
-
+async def queue_movie_file(bot, media):
     try:
-        if await db.movie_update_status(bot.me.id):
-            await process_and_send_update(bot, media.file_name, media.caption)
-    except Exception:
-        logger.exception("Error processing media")
-
-# ==============================
-# PROCESSOR
-# ==============================
-async def process_and_send_update(bot, filename, caption):
-    try:
-        # file info extract
-        base_name = normalize(remove_ignored_words(normalize(filename)))
-        year_match = YEAR_PATTERN.search(filename)
-        if year_match and year_match.group(0) not in base_name:
-            base_name += f" {year_match.group(0)}"
-
-        lock = locks[base_name]
-        async with lock:
-            await _process_with_lock(bot, filename, caption, base_name)
-    except Exception as e:
-        logger.error(f"Processing failed: {e}")
-
-async def _process_with_lock(bot, filename, caption, base_name):
-    if not hasattr(db, 'movie_updates'):
-        db.movie_updates = db.db.movie_updates
-
-    movie_doc = await db.movie_updates.find_one({"_id": base_name})
-    file_data = {
-        "filename": filename,
-        "quality": get_qualities(caption),
-        "language": "Hindi" if "hindi" in caption.lower() else "N/A",
-        "ott_platform": extract_ott_platform(caption),
-        "timestamp": datetime.now(),
-    }
-
-    if not movie_doc:
-        details = await get_movie_details(base_name) or {}
-        movie_doc = {
-            "_id": base_name,
-            "files": [file_data],
-            "poster_url": details.get("poster_url"),
-            "genres": details.get("genres", "N/A"),
-            "rating": details.get("rating", "N/A"),
-            "imdb_url": details.get("url", ""),
-            "year": details.get("year"),
-            "message_id": None,
-            "is_photo": False
-        }
-        try:
-            await db.movie_updates.insert_one(movie_doc)
-            await send_movie_update(bot, base_name)
-        except DuplicateKeyError:
-            pass
-    else:
-        if any(f["filename"] == filename for f in movie_doc["files"]):
-            return
-        await db.movie_updates.update_one(
-            {"_id": base_name},
-            {"$push": {"files": file_data}}
+        file_name = await movie_name_format(media.file_name)
+        caption = await movie_name_format(media.caption)
+        year_match = re.search(r"\b(19|20)\d{2}\b", caption)
+        year = year_match.group(0) if year_match else None
+        season_match = re.search(r"(?i)(?:s|season)0*(\d{1,2})", caption) or re.search(
+            r"(?i)(?:s|season)0*(\d{1,2})", file_name
         )
-        movie_doc["files"].append(file_data)
+        if year:
+            file_name = file_name[: file_name.find(year) + 4]
+        elif season_match:
+            season = season_match.group(1)
+            file_name = file_name[: file_name.find(season) + 1]
+        quality = await get_qualities(caption) or "HDRip"
+        jisshuquality = await Jisshu_qualities(caption, media.file_name) or "720p"
+        language = (
+            ", ".join(
+                [lang for lang in CAPTION_LANGUAGES if lang.lower() in caption.lower()]
+            )
+            or "Not Idea"
+        )
+        file_size_str = format_file_size(media.file_size)
+        file_id, file_ref = unpack_new_file_id(media.file_id)
+        movie_files[file_name].append(
+            {
+                "quality": quality,
+                "jisshuquality": jisshuquality,
+                "file_id": file_id,
+                "file_size": file_size_str,
+                "caption": caption,
+                "language": language,
+                "year": year,
+            }
+        )
+        if file_name in processing_movies:
+            return
+        processing_movies.add(file_name)
+        try:
+            await asyncio.sleep(POST_DELAY)
+            if file_name in movie_files:
+                await send_movie_update(bot, file_name, movie_files[file_name])
+                del movie_files[file_name]
+        finally:
+            processing_movies.remove(file_name)
+    except Exception as e:
+        print(f"Error in queue_movie_file: {e}")
+        if file_name in processing_movies:
+            processing_movies.remove(file_name)
+        await bot.send_message(LOG_CHANNEL, f"Failed to send movie update. Error - {e}'\n\n<blockquote>If you don’t understand this error, you can ask in our support group: @Jisshu_support.</blockquote>")
 
-# ==============================
-# SEND + UPDATE MESSAGE
-# ==============================
-async def send_movie_update(bot, base_name):
+async def send_movie_update(bot, file_name, files):
     try:
-        movie_doc = await db.movie_updates.find_one({"_id": base_name})
-        if not movie_doc:
+        if file_name in notified_movies:
+            return
+        notified_movies.add(file_name)
+
+        imdb_data = await get_imdb(file_name)
+        title = imdb_data.get("title", file_name)
+        year_match = re.search(r"\b(19|20)\d{2}\b", file_name)
+        year = year_match.group(0) if year_match else None
+        poster = await fetch_movie_poster(title, files[0]["year"])
+        kind = imdb_data.get("kind", "").strip().upper().replace(" ", "_") if imdb_data else ""
+        if kind == "TV_SERIES":
+           kind = "SERIES"
+        languages = set()
+        for file in files:
+            if file["language"] != "Not Idea":
+                languages.update(file["language"].split(", "))
+        language = ", ".join(sorted(languages)) or "Not Idea"
+
+        episode_pattern = re.compile(r"S(\d{1,2})E(\d{1,2})", re.IGNORECASE)
+        combined_pattern = re.compile(r"S(\d{1,2})\s*E(\d{1,2})[-~]E?(\d{1,2})", re.IGNORECASE)
+        episode_map = defaultdict(dict)
+        combined_links = []
+
+        for file in files:
+            caption = file["caption"]
+            quality = file.get("jisshuquality") or file.get("quality") or "Unknown"
+            size = file["file_size"]
+            file_id = file['file_id']
+            match = episode_pattern.search(caption)
+            combined_match = combined_pattern.search(caption)
+
+            if match:
+                ep = f"S{int(match.group(1)):02d}E{int(match.group(2)):02d}"
+                episode_map[ep][quality] = file
+            elif combined_match:
+                season = f"S{int(combined_match.group(1)):02d}"
+                ep_range = f"E{int(combined_match.group(2)):02d}-{int(combined_match.group(3)):02d}"
+                ep = f"{season}{ep_range}"
+                combined_links.append(f"📦 {ep} ({quality}) : <a href='https://t.me/{temp.U_NAME}?start=file_0_{file_id}'>{size}</a>")
+            elif re.search(r"complete|completed|batch|combined", caption, re.IGNORECASE):
+                combined_links.append(f"📦 ({quality}) : <a href='https://t.me/{temp.U_NAME}?start=file_0_{file_id}'>{size}</a>")
+
+        quality_text = ""
+
+        for ep, qualities in sorted(episode_map.items()):
+            parts = []
+            for quality in sorted(qualities.keys()):
+                f = qualities[quality]
+                link = f"<a href='https://t.me/{temp.U_NAME}?start=file_0_{f['file_id']}'>{quality}</a>"
+                parts.append(link)
+            joined = " - ".join(parts)
+            quality_text += f"📦 {ep} : {joined}\n"
+
+        if combined_links:
+            quality_text += "\n<b>COMBiNED</b> ✅\n\n"
+            quality_text += "\n".join(combined_links) + "\n"
+            
+        if not quality_text:
+            quality_groups = defaultdict(list)
+            for file in files:
+                quality = file.get("jisshuquality") or file.get("quality") or "Unknown"
+                quality_groups[quality].append(file)
+
+            for quality, q_files in sorted(quality_groups.items()):
+                links = [f"<a href='https://t.me/{temp.U_NAME}?start=file_0_{f['file_id']}'>{f['file_size']}</a>" for f in q_files]
+                line = f"📦 {quality} : " + " | ".join(links)
+                quality_text += line + "\n"
+
+        image_url = poster or "https://te.legra.ph/file/88d845b4f8a024a71465d.jpg"
+        full_caption = UPDATE_CAPTION.format(kind, title, year, files[0]['quality'], language, quality_text)
+
+        movie_update_channel = await db.movies_update_channel_id()
+        await bot.send_photo(
+            chat_id=movie_update_channel if movie_update_channel else MOVIE_UPDATE_CHANNEL,
+            photo=image_url,
+            caption=full_caption,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+    except Exception as e:
+        print('Failed to send movie update. Error - ', e)
+        await bot.send_message(LOG_CHANNEL, f"Failed to send movie update. Error - {e}'\n\n<blockquote>If you don’t understand this error, you can ask in our support group: @Jisshu_support.</blockquote>")
+
+
+async def get_imdb(file_name):
+    try:
+        formatted_name = await movie_name_format(file_name)
+        imdb = await get_poster(formatted_name)
+        if not imdb:
+            return {}
+        return {
+            "title": imdb.get("title", formatted_name),
+            "kind": imdb.get("kind", "Movie"),
+            "year": imdb.get("year"),
+            "url": imdb.get("url"),
+        }
+    except Exception as e:
+        print(f"IMDB fetch error: {e}")
+        return {}
+
+
+async def fetch_movie_poster(title: str, year: Optional[int] = None) -> Optional[str]:
+    async with aiohttp.ClientSession() as session:
+        query = title.strip().replace(" ", "+")
+        url = f"https://jisshuapis.vercel.app/api.php?query={query}"
+        try:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as res:
+                if res.status != 200:
+                    print(f"API Error: HTTP {res.status}")
+                    return None
+                data = await res.json()
+
+                for key in ["jisshu-2", "jisshu-3", "jisshu-4"]:
+                    posters = data.get(key)
+                    if posters and isinstance(posters, list) and posters:
+                        return posters[0]
+
+                print(f"No Poster Found in jisshu-2/3/4 for Title: {title}")
+                return None
+
+        except aiohttp.ClientError as e:
+            print(f"Network Error: {e}")
+            return None
+        except asyncio.TimeoutError:
+            print("Request Timed Out")
+            return None
+        except Exception as e:
+            print(f"Unexpected Error: {e}")
             return None
 
-        text = generate_movie_message(movie_doc, base_name)
-        buttons = InlineKeyboardMarkup([[
-            InlineKeyboardButton(
-                'ɢᴇᴛ ғɪʟᴇs',
-                url=f"https://t.me/{temp.U_NAME}?start=getfile-{base_name.replace(' ', '-')}"
-            )
-        ]])
 
-        if movie_doc.get("poster_url") and not LINK_PREVIEW:
-            resized_poster = await fetch_image(movie_doc["poster_url"], size=(1280, 720))
-            msg = await bot.send_photo(
-                chat_id=MOVIE_UPDATE_CHANNEL,
-                photo=resized_poster,
-                caption=text,
-                reply_markup=buttons,
-                parse_mode=enums.ParseMode.HTML
-            )
-            is_photo = True
-        else:
-            msg = await bot.send_message(
-                chat_id=MOVIE_UPDATE_CHANNEL,
-                text=text,
-                reply_markup=buttons,
-                parse_mode=enums.ParseMode.HTML,
-                disable_web_page_preview=not LINK_PREVIEW
-            )
-            is_photo = False
+def generate_unique_id(movie_name):
+    return hashlib.md5(movie_name.encode("utf-8")).hexdigest()[:5]
 
-        await db.movie_updates.update_one(
-            {"_id": base_name},
-            {"$set": {"message_id": msg.id, "is_photo": is_photo}}
-        )
-        return msg
-    except Exception as e:
-        logger.error(f"Failed to send movie update: {e}")
-        await bot.send_message(LOG_CHANNEL, f"❌ Movie Update Failed\n\n{e}")
-    return None
 
-def generate_movie_message(movie_doc, base_name):
-    qualities = {f["quality"] for f in movie_doc["files"] if f.get("quality")}
-    langs = {f["language"] for f in movie_doc["files"] if f.get("language")}
-    otts = {f["ott_platform"] for f in movie_doc["files"] if f.get("ott_platform")}
+async def get_qualities(text):
+    qualities = [
+        "480p",
+        "720p",
+        "720p HEVC",
+        "1080p",
+        "ORG",
+        "org",
+        "hdcam",
+        "HDCAM",
+        "HQ",
+        "hq",
+        "HDRip",
+        "hdrip",
+        "camrip",
+        "WEB-DL",
+        "CAMRip",
+        "hdtc",
+        "predvd",
+        "DVDscr",
+        "dvdscr",
+        "dvdrip",
+        "HDTC",
+        "dvdscreen",
+        "HDTS",
+        "hdts",
+    ]
+    found_qualities = [q for q in qualities if q.lower() in text.lower()]
+    return ", ".join(found_qualities) or "HDRip"
 
-    return script.MOVIE_UPDATE_NOTIFY_TXT.format(
-        poster_url=movie_doc.get("poster_url", ""),
-        imdb_url=movie_doc.get("imdb_url", ""),
-        filename=base_name,
-        tag="#MOVIE",
-        genres=movie_doc.get("genres", "N/A"),
-        ott=", ".join(otts) if otts else "N/A",
-        quality=", ".join(qualities) if qualities else "N/A",
-        language=", ".join(langs) if langs else "N/A",
-        episodes="",
-        rating=movie_doc.get("rating", "N/A"),
-        search_link=temp.B_LINK
-    )
 
+async def Jisshu_qualities(text, file_name):
+    qualities = ["480p", "720p", "720p HEVC", "1080p", "1080p HEVC", "2160p"]
+    combined_text = (text.lower() + " " + file_name.lower()).strip()
+    if "hevc" in combined_text:
+        for quality in qualities:
+            if "HEVC" in quality and quality.split()[0].lower() in combined_text:
+                return quality
+    for quality in qualities:
+        if "HEVC" not in quality and quality.lower() in combined_text:
+            return quality
+    return "720p"
+
+
+async def movie_name_format(file_name):
+    filename = re.sub(
+        r"http\S+",
+        "",
+        re.sub(r"@\w+|#\w+", "", file_name)
+        .replace("_", " ")
+        .replace("[", "")
+        .replace("]", "")
+        .replace("(", "")
+        .replace(")", "")
+        .replace("{", "")
+        .replace("}", "")
+        .replace(".", " ")
+        .replace("@", "")
+        .replace(":", "")
+        .replace(";", "")
+        .replace("'", "")
+        .replace("-", "")
+        .replace("!", ""),
+    ).strip()
+    return filename
+
+
+def format_file_size(size_bytes):
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if size_bytes < 1024:
+            return f"{size_bytes:.2f} {unit}"
+        size_bytes /= 1024
+    return f"{size_bytes:.2f} PB"
