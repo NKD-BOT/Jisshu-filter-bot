@@ -288,12 +288,12 @@ Provided by 𝖩𝗈𝗂𝗇➥ - <b><a href='https://t.me/Nkdcrazy'>kdi ᴅʀ�
     
 <blockquote>🎖️ᴀᴠᴀɪʟᴀʙʟᴇ ᴘʀᴇᴍɪᴜᴍ ᴘʟᴀɴꜱ :</blockquote>
 
- ❏ 𝟶𝟷𝟻₹    ➠    𝟶𝟷 ᴡᴇᴇᴋꜱ
- ❏ 𝟶𝟹𝟿₹    ➠    𝟶𝟷 ᴍᴏɴᴛʜ
- ❏ 𝟶𝟽𝟻₹    ➠    𝟶𝟸 ᴍᴏɴᴛʜ
- ❏ 𝟷𝟷𝟶₹    ➠    𝟶𝟹 ᴍᴏɴᴛʜ
- ❏ 𝟷𝟿𝟿₹    ➠    𝟶𝟼 ᴍᴏɴᴛʜ
- ❏ 𝟹𝟼𝟶₹    ➠    𝟷𝟸 ᴍᴏɴᴛʜ
+ ❏ 𝟶30₹    ➠    𝟶𝟷 ᴡᴇᴇᴋꜱ
+ ❏ 𝟶50₹    ➠    𝟶𝟷 ᴍᴏɴᴛʜ
+ ❏ 𝟶89₹    ➠    𝟶𝟸 ᴍᴏɴᴛʜ
+ ❏ 𝟷40₹    ➠    𝟶𝟹 ᴍᴏɴᴛʜ
+ ❏ 250₹    ➠    𝟶𝟼 ᴍᴏɴᴛʜ
+ ❏ 400₹    ➠    𝟷𝟸 ᴍᴏɴᴛʜ
 
 🆔 ᴜᴘɪ ɪᴅ ➩ <code>nkdkoreandramahindi@okaxis</code> [ᴛᴀᴘ ᴛᴏ ᴄᴏᴘʏ]
  
@@ -447,3 +447,4 @@ Aᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴀɴᴅ ᴍᴀᴋᴇ ᴍᴇ ᴀ�
 ʙʏ /details ᴄᴏᴍᴍᴀɴᴅ
 </blockquote>
 Iғ ʏᴏᴜ ʜᴀᴠᴇ ᴀɴʏ ᴅᴏᴜʙᴛs ᴘʟᴇᴀsᴇ <a href="https://telegram.dog/Fake_SmileK">ᴄᴏɴᴛᴀᴄᴛ</a> ᴍʏ <a href="https://telegram.dog/Fake_SmileK">𝙁ǻķ𝐞 𝗦𝑚ᶦ𝑙𝐞 ♡</a></b>"""
+
