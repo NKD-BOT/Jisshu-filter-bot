@@ -315,7 +315,7 @@ async def start(client: Client, message):
                     [
                         InlineKeyboardButton(
                             "♻️ ᴛʀʏ ᴀɢᴀɪɴ ♻️",
-                            url=f"https://t.me/{temp.U_NAME}?start={message.command[1]}",
+                            url=f"https://telegram.me/{temp.U_NAME}?start={message.command[1]}",
                         )
                     ]
                 )
@@ -361,7 +361,7 @@ async def start(client: Client, message):
                 [
                     InlineKeyboardButton(
                         "♻️ ᴛʀʏ ᴀɢᴀɪɴ ♻️",
-                        url=f"https://t.me/{temp.U_NAME}?start={message.command[1]}",
+                        url=f"https://telegram.me/{temp.U_NAME}?start={message.command[1]}",
                     )
                 ]
             )
@@ -1547,3 +1547,4 @@ async def reset_group_command(client, message):
     reply_markup = InlineKeyboardMarkup(btn)
     await save_default_settings(grp_id)
     await message.reply_text("ꜱᴜᴄᴄᴇꜱꜱғᴜʟʟʏ ʀᴇꜱᴇᴛ ɢʀᴏᴜᴘ ꜱᴇᴛᴛɪɴɢꜱ...")
+
