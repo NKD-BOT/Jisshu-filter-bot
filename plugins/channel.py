@@ -166,9 +166,9 @@ async def send_movie_update(bot, file_name, files):
                 season = f"S{int(combined_match.group(1)):02d}"
                 ep_range = f"E{int(combined_match.group(2)):02d}-{int(combined_match.group(3)):02d}"
                 ep = f"{season}{ep_range}"
-                combined_links.append(f"📦 {ep} ({quality}) : <a href='https://t.me/{temp.U_NAME}?start=file_0_{file_id}'>{size}</a>")
+                combined_links.append(f"📦 {ep} ({quality}) : <a href='https://telegram.me/{temp.U_NAME}?start=file_0_{file_id}'>{size}</a>")
             elif re.search(r"complete|completed|batch|combined", caption, re.IGNORECASE):
-                combined_links.append(f"📦 ({quality}) : <a href='https://t.me/{temp.U_NAME}?start=file_0_{file_id}'>{size}</a>")
+                combined_links.append(f"📦 ({quality}) : <a href='https://telegram.me/{temp.U_NAME}?start=file_0_{file_id}'>{size}</a>")
 
         quality_text = ""
 
@@ -176,7 +176,7 @@ async def send_movie_update(bot, file_name, files):
             parts = []
             for quality in sorted(qualities.keys()):
                 f = qualities[quality]
-                link = f"<a href='https://t.me/{temp.U_NAME}?start=file_0_{f['file_id']}'>{quality}</a>"
+                link = f"<a href='https://telegram.me/{temp.U_NAME}?start=file_0_{f['file_id']}'>{quality}</a>"
                 parts.append(link)
             joined = " - ".join(parts)
             quality_text += f"📦 {ep} : {joined}\n"
@@ -192,7 +192,7 @@ async def send_movie_update(bot, file_name, files):
                 quality_groups[quality].append(file)
 
             for quality, q_files in sorted(quality_groups.items()):
-                links = [f"<a href='https://t.me/{temp.U_NAME}?start=file_0_{f['file_id']}'>{f['file_size']}</a>" for f in q_files]
+                links = [f"<a href='https://telegram.me/{temp.U_NAME}?start=file_0_{f['file_id']}'>{f['file_size']}</a>" for f in q_files]
                 line = f"📦 {quality} : " + " | ".join(links)
                 quality_text += line + "\n"
 
@@ -336,3 +336,4 @@ def format_file_size(size_bytes):
             return f"{size_bytes:.2f} {unit}"
         size_bytes /= 1024
     return f"{size_bytes:.2f} PB"
+
