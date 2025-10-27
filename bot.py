@@ -192,7 +192,7 @@ async def Jisshu_start():
     try:
         app = await web_server()
         # ensure root exists for health check
-        if not any(r.path == "/" for r in app.router.routes()):
+        if not any(getattr(r.resource, "canonical", None) == "/" for r in app.router.routes()):
             app.router.add_get("/", _root_health)
         runner = web.AppRunner(app)
         await runner.setup()
