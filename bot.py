@@ -45,19 +45,30 @@ pyrogram.utils.MIN_CHANNEL_ID = -1009147483647
 
 async def send_restart_notice_to_all():
     """Send restart message to all users in the database."""
-    users = await db.get_all_users()  # Make sure this method exists in your db class
+    try:
+        cursor = await db.get_all_users()
+        users = await cursor.to_list(length=None)  # ✅ FIX: Convert cursor to list
+    except Exception as e:
+        logging.warning(f"Error fetching users list: {e}")
+        return
+
     if not users:
         logging.info("No users found to notify restart.")
         return
+
+    sent = 0
     for user in users:
         try:
             await JisshuBot.send_message(
                 chat_id=user["id"],
                 text="⚙️ <b>Bot has been restarted successfully!</b>\n\nYou can continue using it now 🚀",
             )
+            sent += 1
+            await asyncio.sleep(0.2)
         except Exception as e:
-            logging.warning(f"Could not send restart notice to {user['id']}: {e}")
-    logging.info(f"Restart notification sent to {len(users)} users ✅")
+            logging.warning(f"Could not send restart notice to {user.get('id')}: {e}")
+
+    logging.info(f"✅ Restart notification sent to {sent}/{len(users)} users.")
 
 
 async def Jisshu_start():
