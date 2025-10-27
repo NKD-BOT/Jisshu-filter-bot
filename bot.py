@@ -43,6 +43,23 @@ loop = asyncio.get_event_loop()
 pyrogram.utils.MIN_CHANNEL_ID = -1009147483647
 
 
+async def send_restart_notice_to_all():
+    """Send restart message to all users in the database."""
+    users = await db.get_all_users()  # Make sure this method exists in your db class
+    if not users:
+        logging.info("No users found to notify restart.")
+        return
+    for user in users:
+        try:
+            await JisshuBot.send_message(
+                chat_id=user["id"],
+                text="⚙️ <b>Bot has been restarted successfully!</b>\n\nYou can continue using it now 🚀",
+            )
+        except Exception as e:
+            logging.warning(f"Could not send restart notice to {user['id']}: {e}")
+    logging.info(f"Restart notification sent to {len(users)} users ✅")
+
+
 async def Jisshu_start():
     print("\n")
     print("Credit - Telegram @JISSHU_BOTS")
@@ -87,6 +104,10 @@ async def Jisshu_start():
     await JisshuBot.send_message(
         chat_id=SUPPORT_GROUP, text=f"<b>{me.mention} ʀᴇsᴛᴀʀᴛᴇᴅ 🤖</b>"
     )
+
+    # 🔥 Send restart notification to all users
+    await send_restart_notice_to_all()
+
     app = web.AppRunner(await web_server())
     await app.setup()
     bind_address = "0.0.0.0"
