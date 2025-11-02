@@ -79,15 +79,15 @@ VERIFY_IMG = environ.get(
 SHORTENER_API = environ.get("SHORTENER_API", "fa7c2dac9ae7ab73dc76af55919bb4636fb8e067")
 SHORTENER_WEBSITE = environ.get("SHORTENER_WEBSITE", "arolinks.com")
 SHORTENER_API2 = environ.get(
-    "SHORTENER_API2", "fa7c2dac9ae7ab73dc76af55919bb4636fb8e067"
+    "SHORTENER_API2", "f7308c13455d2a1c5195b1ca52c6af42d75d78e7"
 )
-SHORTENER_WEBSITE2 = environ.get("SHORTENER_WEBSITE2", "arolinks.com")
+SHORTENER_WEBSITE2 = environ.get("SHORTENER_WEBSITE2", "bindaaslinks.com")
 SHORTENER_API3 = environ.get(
-    "SHORTENER_API3", "fa7c2dac9ae7ab73dc76af55919bb4636fb8e067"
+    "SHORTENER_API3", "58b7ead073e65053952153e9758b9b00623d961b"
 )
-SHORTENER_WEBSITE3 = environ.get("SHORTENER_WEBSITE3", "arolinks.com")
-TWO_VERIFY_GAP = int(environ.get("TWO_VERIFY_GAP", "86400"))
-THREE_VERIFY_GAP = int(environ.get("THREE_VERIFY_GAP", "86400"))
+SHORTENER_WEBSITE3 = environ.get("SHORTENER_WEBSITE3", "gplinks.com")
+TWO_VERIFY_GAP = int(environ.get("TWO_VERIFY_GAP", "43200"))
+THREE_VERIFY_GAP = int(environ.get("THREE_VERIFY_GAP", "43200"))
 
 # Language & Quality & Season & Year
 LANGUAGES = [
