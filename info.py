@@ -76,16 +76,16 @@ TUTORIAL_3 = environ.get("TUTORIAL_3", "https://t.me/nkdcrazy")
 VERIFY_IMG = environ.get(
     "VERIFY_IMG", "https://graph.org/file/1669ab9af68eaa62c3ca4.jpg"
 )
-SHORTENER_API = environ.get("SHORTENER_API", "8b9224a942c92b8f2016f0d06a32c08a3fee8c95")
-SHORTENER_WEBSITE = environ.get("SHORTENER_WEBSITE", "earnshorts.com")
+SHORTENER_API = environ.get("SHORTENER_API", "dd3762c423556b4f906267ec7cd8ee9b28731d91")
+SHORTENER_WEBSITE = environ.get("SHORTENER_WEBSITE", "linkshortify.com")
 SHORTENER_API2 = environ.get(
-    "SHORTENER_API2", "273be97a472a67acc37dc7e1ad6824ca0f8f05d0"
+    "SHORTENER_API2", "dd3762c423556b4f906267ec7cd8ee9b28731d91"
 )
-SHORTENER_WEBSITE2 = environ.get("SHORTENER_WEBSITE2", "gplinks.com")
+SHORTENER_WEBSITE2 = environ.get("SHORTENER_WEBSITE2", "linkshortify.com")
 SHORTENER_API3 = environ.get(
-    "SHORTENER_API3", "400d971c9636abb6119b146d3e258ec0fcf2931f"
+    "SHORTENER_API3", "dd3762c423556b4f906267ec7cd8ee9b28731d91"
 )
-SHORTENER_WEBSITE3 = environ.get("SHORTENER_WEBSITE3", "gplinks.com")
+SHORTENER_WEBSITE3 = environ.get("SHORTENER_WEBSITE3", "linkshortify.com")
 TWO_VERIFY_GAP = int(environ.get("TWO_VERIFY_GAP", "28800"))
 THREE_VERIFY_GAP = int(environ.get("THREE_VERIFY_GAP", "28800"))
 
