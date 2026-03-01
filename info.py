@@ -86,8 +86,8 @@ SHORTENER_API3 = environ.get(
     "SHORTENER_API3", "dd3762c423556b4f906267ec7cd8ee9b28731d91"
 )
 SHORTENER_WEBSITE3 = environ.get("SHORTENER_WEBSITE3", "linkshortify.com")
-TWO_VERIFY_GAP = int(environ.get("TWO_VERIFY_GAP", "28800"))
-THREE_VERIFY_GAP = int(environ.get("THREE_VERIFY_GAP", "28800"))
+TWO_VERIFY_GAP = int(environ.get("TWO_VERIFY_GAP", "43200"))
+THREE_VERIFY_GAP = int(environ.get("THREE_VERIFY_GAP", "43200"))
 
 # Language & Quality & Season & Year
 LANGUAGES = [
