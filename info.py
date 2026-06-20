@@ -29,7 +29,7 @@ ADMINS = [
 OWNER_USERNAME = environ.get(
     "OWNER_USERNAME", "Heart_broker0"
 )  # without @ or https://t.me/
-USERNAME = environ.get("USERNAME", "")  # ADMIN USERNAME
+USERNAME = environ.get("Fake_SmileK", "")  # ADMIN USERNAME
 
 # Database Channel
 CHANNELS = [
