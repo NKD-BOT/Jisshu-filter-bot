@@ -25,14 +25,15 @@ class UserTracker:
         return bool(self.user_collection.find_one({"user_id": user_id}))
 
     def add_refer_points(self, user_id: int, points: int):
-    self.refer_collection.update_one(
-        {"user_id": user_id},
-        {"$inc": {"points": points}},
-        upsert=True
-    )
+        self.refer_collection.update_one(
+            {"user_id": user_id},
+            {"$inc": {"points": points}},
+            upsert=True
+        )
+
     def get_refer_points(self, user_id: int):
         user = self.refer_collection.find_one({"user_id": user_id})
-        return user.get("points") if user else 0
+        return user.get("points", 0) if user else 0
 
 
 referdb = UserTracker()
