@@ -25,6 +25,7 @@ from database.config_db import mdb
 from database.topdb import JsTopDB
 from database.jsreferdb import referdb
 from plugins.pm_filter import auto_filter
+from plugins.Extra.premium import add_premium
 from utils import (
     formate_file_name,
     get_settings,
