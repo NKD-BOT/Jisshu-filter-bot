@@ -8,6 +8,46 @@ from pyrogram import Client, filters
 from pyrogram.errors.exceptions.bad_request_400 import MessageTooLong
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+async def add_premium(client, user_id, time="1month"):
+    seconds = await get_seconds(time)
+    if seconds <= 0:
+        return False
+    user = await client.get_users(user_id)
+    expiry_time = datetime.datetime.now() + datetime.timedelta(seconds=seconds)
+    await db.update_user({"id": user_id, "expiry_time": expiry_time})
+
+    current_time = datetime.datetime.now(
+        pytz.timezone("Asia/Kolkata")
+    ).strftime("%d-%m-%Y\n⏱️ %I:%M:%S %p")
+
+    expiry_str = expiry_time.astimezone(
+        pytz.timezone("Asia/Kolkata")
+    ).strftime("%d-%m-%Y\n⏱️ %I:%M:%S %p")
+
+    await client.send_message(
+        user_id,
+        f"""🎉 Congratulations!
+
+🏆 You have earned 1 Month Premium by completing 100 referral points.
+
+⏳ Join Date:
+{current_time}
+
+⌛ Expiry Date:
+{expiry_str}
+"""
+    )
+    try:
+        await client.send_message(
+            LOG_CHANNEL,
+            f"#Referral_Premium\n\n👤 {user.mention}\n🆔 `{user.id}`\n🎁 Reward : 1 Month Premium",
+        )
+    except:
+        pass
+    return True
+
+
+
 
 @Client.on_message(filters.command("add_premium"))
 async def give_premium_cmd_handler(client, message):
