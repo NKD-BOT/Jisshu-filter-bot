@@ -28,12 +28,19 @@ class UserTracker:
         self.refer_collection.update_one(
             {"user_id": user_id},
             {"$inc": {"points": points}},
-            upsert=True
+            upsert=True,
         )
 
     def get_refer_points(self, user_id: int):
         user = self.refer_collection.find_one({"user_id": user_id})
         return user.get("points", 0) if user else 0
+
+    def remove_points(self, user_id: int, points: int):
+        self.refer_collection.update_one(
+            {"user_id": user_id},
+            {"$inc": {"points": -points}},
+            upsert=True,
+        )
 
 
 referdb = UserTracker()
