@@ -21,7 +21,7 @@ logging.getLogger("aiohttp.web").setLevel(logging.ERROR)
 
 from pyrogram import __version__
 from pyrogram.raw.all import layer
-from database.ia_filterdb import Media
+from database.ia_filterdb import Media, build_spell_corpus, refresh_spell_corpus_loop
 from database.users_chats_db import db
 from info import *
 from utils import temp
@@ -154,6 +154,7 @@ async def Jisshu_start():
     temp.BANNED_USERS = b_users
     temp.BANNED_CHATS = b_chats
     await Media.ensure_indexes()
+    asyncio.create_task(refresh_spell_corpus_loop())
     me = await JisshuBot.get_me()
     temp.ME = me.id
     temp.U_NAME = me.username
