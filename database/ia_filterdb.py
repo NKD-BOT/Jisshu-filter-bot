@@ -1,6 +1,8 @@
 from struct import pack
 import re
 import base64
+import asyncio
+import difflib
 from pyrogram.file_id import FileId
 from pymongo.errors import DuplicateKeyError
 from umongo import Instance, Document, fields
@@ -30,6 +32,69 @@ class Media(Document):
 
 async def get_files_db_size():
     return (await mydb.command("dbstats"))["dataSize"]
+
+
+# ==========================================================================
+# Spell Correction (fuzzy "did you mean" search)
+# --------------------------------------------------------------------------
+# Builds an in-memory word corpus from every indexed file_name and uses it
+# to auto-correct misspelled search queries (e.g. "Heros" -> "Heroes")
+# before falling back to a "no results" reply.
+# ==========================================================================
+SPELL_CORPUS = set()
+_CORPUS_LOCK = asyncio.Lock()
+
+
+async def build_spell_corpus():
+    """(Re)builds the in-memory word corpus used for fuzzy spelling
+    correction, from all currently indexed file names."""
+    global SPELL_CORPUS
+    words = set()
+    try:
+        cursor = mydb[COLLECTION_NAME].find({}, {"file_name": 1})
+        async for doc in cursor:
+            name = doc.get("file_name", "") or ""
+            for w in re.split(r"[^A-Za-z0-9]+", name):
+                w = w.lower()
+                if len(w) >= 3 and not w.isdigit():
+                    words.add(w)
+    except Exception as e:
+        print(f"[SpellCorpus] Failed to build corpus: {e}")
+        return
+    async with _CORPUS_LOCK:
+        SPELL_CORPUS = words
+    print(f"[SpellCorpus] Built corpus with {len(words)} unique words")
+
+
+async def refresh_spell_corpus_loop(interval_seconds: int = 3 * 60 * 60):
+    """Background loop: rebuilds the spell-check corpus periodically so it
+    stays fresh as new files get indexed."""
+    while True:
+        await build_spell_corpus()
+        await asyncio.sleep(interval_seconds)
+
+
+def _correct_query_spelling(query: str):
+    """Attempts to auto-correct misspelled words in a search query using
+    the in-memory corpus of known file-name words.
+    Returns (corrected_query, changed: bool)."""
+    if not SPELL_CORPUS:
+        return query, False
+    words = query.split(" ")
+    changed = False
+    corrected_words = []
+    for w in words:
+        clean = re.sub(r"[^A-Za-z0-9]", "", w).lower()
+        if not clean or len(clean) < 3 or clean in SPELL_CORPUS:
+            corrected_words.append(w)
+            continue
+        matches = difflib.get_close_matches(clean, SPELL_CORPUS, n=1, cutoff=0.75)
+        if matches:
+            corrected_words.append(matches[0])
+            changed = True
+        else:
+            corrected_words.append(w)
+    return " ".join(corrected_words), changed
 
 
 async def save_file(media):
@@ -64,7 +129,23 @@ async def save_file(media):
             return "suc"
 
 
-async def get_search_results(query, max_results=MAX_BTN, offset=0, lang=None):
+async def get_search_results(query, max_results=MAX_BTN, offset=0, lang=None, _spell_retry=True):
+    files, next_offset, total_results = await _get_search_results_raw(
+        query, max_results=max_results, offset=offset, lang=lang
+    )
+    if total_results == 0 and _spell_retry:
+        corrected, changed = _correct_query_spelling(query)
+        if changed and corrected.strip().lower() != query.strip().lower():
+            c_files, c_next_offset, c_total = await _get_search_results_raw(
+                corrected, max_results=max_results, offset=offset, lang=lang
+            )
+            if c_total > 0:
+                print(f"[SpellCorpus] '{query}' had 0 results, auto-corrected to '{corrected}'")
+                return c_files, c_next_offset, c_total
+    return files, next_offset, total_results
+
+
+async def _get_search_results_raw(query, max_results=MAX_BTN, offset=0, lang=None):
     query = query.strip()
     if not query:
         raw_pattern = "."
