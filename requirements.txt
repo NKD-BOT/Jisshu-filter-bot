@@ -52,3 +52,4 @@ telegraph
 # --- Voice Search ---
 SpeechRecognition
 pydub
+static-ffmpeg
