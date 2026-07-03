@@ -48,3 +48,7 @@ pyromod
 colorama
 
 telegraph 
+
+# --- Voice Search ---
+SpeechRecognition
+pydub

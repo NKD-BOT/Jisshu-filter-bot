@@ -3,7 +3,7 @@ FROM python:3.10.8-slim-buster
 WORKDIR /Jisshu-filter-bot
 RUN chmod 777 /Jisshu-filter-bot
 
-RUN apt update && apt install -y --no-install-recommends git \
+RUN apt update && apt install -y --no-install-recommends git ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
