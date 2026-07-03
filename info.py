@@ -79,7 +79,7 @@ VERIFY_IMG = environ.get(
 SHORTENER_API = environ.get("SHORTENER_API", "dd3762c423556b4f906267ec7cd8ee9b28731d91")
 
 # --- Smart Search (TMDb, free key: https://www.themoviedb.org/settings/api) ---
-TMDB_API_KEY = environ.get("TMDB_API_KEY", "")
+TMDB_API_KEY = environ.get("TMDB_API_KEY", "56f3b8a63990ccb59df7ac33b9d6f0e6")
 
 # --- Watch Party ---
 WATCHPARTY_DURATION = int(environ.get("WATCHPARTY_DURATION", "300"))
