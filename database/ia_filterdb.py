@@ -142,6 +142,24 @@ async def get_search_results(query, max_results=MAX_BTN, offset=0, lang=None, _s
             if c_total > 0:
                 print(f"[SpellCorpus] '{query}' had 0 results, auto-corrected to '{corrected}'")
                 return c_files, c_next_offset, c_total
+
+        # 🧠 Smart Search: spelling-correction couldn't help either — try
+        # asking TMDb to understand a natural-language query and resolve it
+        # to a real title (e.g. "that spiderman movie with tobey" -> "Spider-Man").
+        try:
+            from smart_search import smart_resolve
+            resolved = await smart_resolve(query)
+        except Exception as e:
+            print(f"[SmartSearch] failed: {e}")
+            resolved = None
+        if resolved and resolved.strip().lower() != query.strip().lower():
+            s_files, s_next_offset, s_total = await _get_search_results_raw(
+                resolved, max_results=max_results, offset=offset, lang=lang
+            )
+            if s_total > 0:
+                print(f"[SmartSearch] '{query}' had 0 results, resolved to '{resolved}'")
+                return s_files, s_next_offset, s_total
+
     return files, next_offset, total_results
 
 
