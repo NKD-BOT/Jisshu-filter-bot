@@ -6,11 +6,18 @@ text query (fuzzy spelling correction + 🧠 Smart Search included).
 """
 import os
 import tempfile
+import static_ffmpeg
 import speech_recognition as sr
 from pydub import AudioSegment
 from pyrogram import Client, filters
 
 from plugins.pm_filter import auto_filter
+
+# Ensures a working ffmpeg + ffprobe are on PATH regardless of the hosting
+# platform (Docker/Nixpacks/Heroku-buildpack/Koyeb/etc). Downloads a small
+# portable static binary once on first run — no system-level apt install
+# needed anywhere.
+static_ffmpeg.add_paths()
 
 
 @Client.on_message(filters.voice & filters.incoming & (filters.private | filters.group))
