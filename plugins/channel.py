@@ -40,19 +40,20 @@ CAPTION_LANGUAGES = [
     "Urdu",
 ]
 
-UPDATE_CAPTION = """<b>𝖭𝖤𝖶 {} 𝖠𝖣𝖣𝖤𝖣 ✅</b>
+UPDATE_CAPTION = """🍿✨ 𝖥𝖱𝖤𝖲𝖧 {} 𝖣𝖱𝖮𝖯 ✨🍿
 
 🎬 <b>{} {}</b>
-🔰 <b>Quality:</b> {}
-🎧 <b>Audio:</b> {}
+🎚️ <b>Quality:</b> {}    🌐 <b>Audio:</b> {}
 
-<b>✨ Telegram Files ✨</b>
+⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️
 
 {}
 
-<blockquote>〽️ Powered by @CARZYHUBXBOT</b></blockquote>"""
+⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️
 
-QUALITY_CAPTION = """📦 {} : {}\n"""
+<blockquote>🎪 Powered by @CARZYHUBXBOT</b></blockquote>"""
+
+QUALITY_CAPTION = """🎁 {} ➜ {}\n"""
 
 notified_movies = set()
 movie_files = defaultdict(list)
@@ -126,6 +127,110 @@ async def queue_movie_file(bot, media):
             processing_movies.remove(file_name)
         await bot.send_message(LOG_CHANNEL, f"Failed to send movie update. Error - {e}'\n\n<blockquote>If you don’t understand this error, you can ask in our support group: @Jisshu_support.</blockquote>")
 
+OTT_PLATFORMS = {
+    "NF": "Netflix", "NETFLIX": "Netflix",
+    "AMZN": "Amazon Prime Video", "AMAZON": "Amazon Prime Video", "PRIME": "Amazon Prime Video",
+    "DSNP": "Disney+", "DISNEY": "Disney+", "DISNEY+": "Disney+", "HOTSTAR": "Disney+ Hotstar",
+    "HMAX": "HBO Max", "HBOMAX": "HBO Max",
+    "ATVP": "Apple TV+", "APPLETV": "Apple TV+",
+    "SONYLIV": "SonyLIV", "SONY": "SonyLIV",
+    "ZEE5": "ZEE5",
+    "JIOCINEMA": "JioCinema", "JIO": "JioCinema",
+    "VOOT": "Voot",
+    "MXPLAYER": "MX Player", "MX": "MX Player",
+    "ALTBALAJI": "ALTBalaji", "ALT": "ALTBalaji",
+    "AHA": "Aha",
+    "ERosNow": "Eros Now",
+    "HULU": "Hulu",
+    "PEACOCK": "Peacock",
+    "PARAMOUNT": "Paramount+", "PARAMOUNT+": "Paramount+",
+}
+
+
+def detect_ott_platform(text: str) -> Optional[str]:
+    """Scans caption/filename for a known OTT platform tag (NF, AMZN, DSNP, etc.)."""
+    tokens = re.split(r"[\.\s_\-\[\]\(\)]+", text.upper())
+    for tok in tokens:
+        if tok in OTT_PLATFORMS:
+            return OTT_PLATFORMS[tok]
+    return None
+
+
+def normalize_source(text: str) -> str:
+    """Normalizes WEB-DL / WEBDL / WEB DL / webrip variants to a single clean tag."""
+    t = text.lower()
+    if re.search(r"web[\s\-_]?dl", t):
+        return "WEBDL"
+    if re.search(r"web[\s\-_]?rip", t):
+        return "WEBRip"
+    if "blu" in t and "ray" in t:
+        return "BluRay"
+    if "hdrip" in t:
+        return "HDRip"
+    if "hdtc" in t or "hdts" in t:
+        return "HDTC"
+    if "cam" in t:
+        return "CAMRip"
+    if "dvdscr" in t or "dvdscreen" in t:
+        return "DVDScr"
+    if "dvdrip" in t:
+        return "DVDRip"
+    return "WEBDL"  # sensible default for modern releases
+
+
+def extract_episode_summary(files) -> Optional[str]:
+    """Builds a human-readable 'Episode(s)' summary from whatever episodes were
+    actually uploaded in this batch — e.g. 'Episode 1', 'Episodes 1-3', or
+    'Episodes 1, 2, 5'. Returns None for movies (no episode numbers found)."""
+    ep_pattern = re.compile(r"(?i)S\d{1,2}\s*E(\d{1,3})")
+    nums = set()
+    for file in files:
+        m = ep_pattern.search(file["caption"])
+        if m:
+            nums.add(int(m.group(1)))
+    if not nums:
+        return None
+    nums = sorted(nums)
+    if len(nums) == 1:
+        return f"Episode {nums[0]}"
+    # consecutive range?
+    if nums == list(range(nums[0], nums[-1] + 1)):
+        return f"Episodes {nums[0]}-{nums[-1]}"
+    return "Episodes " + ", ".join(str(n) for n in nums)
+
+
+async def fetch_tmdb_poster(title: str, year: Optional[str], is_series: bool) -> Optional[str]:
+    """Fetches a proper poster image directly from TMDb (same TMDB_API_KEY used
+    by Smart Search). Returns a full image URL, or None if unavailable —
+    caller should fall back to the existing jisshuapis poster in that case."""
+    if not TMDB_API_KEY:
+        return None
+    endpoint = "tv" if is_series else "movie"
+    params = {"api_key": TMDB_API_KEY, "query": title}
+    if year:
+        params["year" if not is_series else "first_air_date_year"] = year
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://api.themoviedb.org/3/search/{endpoint}",
+                params=params,
+                timeout=aiohttp.ClientTimeout(total=6),
+            ) as res:
+                if res.status != 200:
+                    return None
+                data = await res.json()
+                results = data.get("results") or []
+                if not results:
+                    return None
+                poster_path = results[0].get("poster_path")
+                if not poster_path:
+                    return None
+                return f"https://image.tmdb.org/t/p/w780{poster_path}"
+    except Exception as e:
+        print(f"[TMDb] poster fetch failed: {e}")
+        return None
+
+
 async def send_movie_update(bot, file_name, files):
     try:
         if file_name in notified_movies:
@@ -136,10 +241,33 @@ async def send_movie_update(bot, file_name, files):
         title = imdb_data.get("title", file_name)
         year_match = re.search(r"\b(19|20)\d{2}\b", file_name)
         year = year_match.group(0) if year_match else None
-        poster = await fetch_movie_poster(title, files[0]["year"])
         kind = imdb_data.get("kind", "").strip().upper().replace(" ", "_") if imdb_data else ""
         if kind == "TV_SERIES":
            kind = "SERIES"
+        is_series = kind == "SERIES"
+
+        # TMDb poster first (proper, high-res); fall back to the older
+        # jisshuapis lookup if TMDb has no key set or no match.
+        poster = await fetch_tmdb_poster(title, year, is_series)
+        if not poster:
+            poster = await fetch_movie_poster(title, files[0]["year"])
+
+        # OTT platform tag (Netflix/Amazon/Disney+/etc.), scanned from captions
+        ott = None
+        for file in files:
+            ott = detect_ott_platform(file["caption"])
+            if ott:
+                break
+
+        # Season number (series only)
+        season_match = re.search(r"(?i)S(\d{1,2})(?:E\d|\b)", file_name) or re.search(
+            r"(?i)Season\s*0*(\d{1,2})", file_name
+        )
+        season_num = f"{int(season_match.group(1)):02d}" if season_match else None
+
+        # Which episode(s) were actually uploaded in this batch
+        episode_summary = extract_episode_summary(files) if is_series else None
+
         languages = set()
         for file in files:
             if file["language"] != "Not Idea":
@@ -166,9 +294,9 @@ async def send_movie_update(bot, file_name, files):
                 season = f"S{int(combined_match.group(1)):02d}"
                 ep_range = f"E{int(combined_match.group(2)):02d}-{int(combined_match.group(3)):02d}"
                 ep = f"{season}{ep_range}"
-                combined_links.append(f"📦 {ep} ({quality}) : <a href='https://telegram.me/{temp.U_NAME}?start=file_0_{file_id}'>{size}</a>")
+                combined_links.append(f"🎁 {ep} ({quality}) ➜ <a href='https://telegram.me/{temp.U_NAME}?start=file_0_{file_id}'>{size}</a>")
             elif re.search(r"complete|completed|batch|combined", caption, re.IGNORECASE):
-                combined_links.append(f"📦 ({quality}) : <a href='https://telegram.me/{temp.U_NAME}?start=file_0_{file_id}'>{size}</a>")
+                combined_links.append(f"🎁 ({quality}) ➜ <a href='https://telegram.me/{temp.U_NAME}?start=file_0_{file_id}'>{size}</a>")
 
         quality_text = ""
 
@@ -179,7 +307,7 @@ async def send_movie_update(bot, file_name, files):
                 link = f"<a href='https://telegram.me/{temp.U_NAME}?start=file_0_{f['file_id']}'>{quality}</a>"
                 parts.append(link)
             joined = " - ".join(parts)
-            quality_text += f"📦 {ep} : {joined}\n"
+            quality_text += f"🎁 {ep} ➜ {joined}\n"
 
         if combined_links:
             quality_text += "\n<b>COMBiNED</b> ✅\n\n"
@@ -193,11 +321,39 @@ async def send_movie_update(bot, file_name, files):
 
             for quality, q_files in sorted(quality_groups.items()):
                 links = [f"<a href='https://telegram.me/{temp.U_NAME}?start=file_0_{f['file_id']}'>{f['file_size']}</a>" for f in q_files]
-                line = f"📦 {quality} : " + " | ".join(links)
+                line = f"🎁 {quality} ➜ " + " | ".join(links)
                 quality_text += line + "\n"
 
         image_url = poster or "https://te.legra.ph/file/88d845b4f8a024a71465d.jpg"
-        full_caption = UPDATE_CAPTION.format(kind, title, year, files[0]['quality'], language, quality_text)
+
+        combined_captions = " ".join(f["caption"] for f in files)
+        source = normalize_source(combined_captions)
+        resolution = files[0].get("jisshuquality") or files[0].get("quality") or "720p"
+
+        title_line = f"🎬 <b>{title}</b>" + (f" ({year})" if year else "")
+        lines = [
+            f"🍿✨ 𝖥𝖱𝖤𝖲𝖧 {kind or 'MOVIE'} 𝖣𝖱𝖮𝖯 ✨🍿",
+            "",
+            title_line,
+        ]
+        if ott:
+            lines.append(f"📺 <b>OTT:</b> {ott}")
+        if season_num:
+            lines.append(f"🗓️ <b>Season:</b> {season_num}")
+        if episode_summary:
+            lines.append(f"🔢 <b>{episode_summary}</b>")
+        lines.append(f"🎚️ <b>Quality:</b> {source} {resolution}    🌐 <b>Audio:</b> {language}")
+        lines += [
+            "",
+            "⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️",
+            "",
+            quality_text.rstrip(),
+            "",
+            "⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️",
+            "",
+            "<blockquote>🎪 Powered by @CARZYHUBXBOT</blockquote>",
+        ]
+        full_caption = "\n".join(lines)
 
         movie_update_channel = await db.movies_update_channel_id()
         await bot.send_photo(
