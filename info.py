@@ -74,8 +74,8 @@ IS_VERIFY = is_enabled("IS_VERIFY", True)
 # API. Every shortlink this bot generates gets wrapped through it first:
 #   user -> your protection bot's gate (bot-check) -> the shortener link
 GATE_ENABLED = is_enabled(environ.get("GATE_ENABLED", "True"), True)
-GATE_API_URL = environ.get("GATE_API_URL", "")   # e.g. https://your-protection-bot.up.railway.app
-GATE_API_KEY = environ.get("GATE_API_KEY", "")   # must match the protection bot's own GATE_API_KEY
+GATE_API_URL = environ.get("GATE_API_URL", "shortner-protection-production-54ddd1.up.railway.app")   # e.g. https://your-protection-bot.up.railway.app
+GATE_API_KEY = environ.get("GATE_API_KEY", "M2MGSxfApLR4Gjv4M5ZaR7iiyxHHQYJ9")   # must match the protection bot's own GATE_API_KEY
 
 TUTORIAL = environ.get("TUTORIAL", "https://t.me/nkdcrazy")
 TUTORIAL_2 = environ.get("TUTORIAL_2", "https://t.me/nkdcrazy")
