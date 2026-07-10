@@ -43,6 +43,7 @@ from utils import (
 import re
 import base64
 from info import *
+from Jisshu.gate import wrap_with_gate
 
 logger = logging.getLogger(__name__)
 movie_series_db = JsTopDB(DATABASE_URI)
@@ -416,6 +417,17 @@ async def start(client: Client, message):
                     is_second_shortener,
                     is_third_shortener,
                 )
+            # ---------------------------------------------------------------
+            # 🛡️ PROTECTION API — wraps the shortlink through your already
+            # deployed protection bot's gate (bot-check) BEFORE the user
+            # reaches the actual shortener link. This is what stops tools
+            # like "bypass bots" from directly extracting the shortener's
+            # quick-link, since they don't recognize our gate's URL.
+            #
+            # Flow: user -> protection bot's gate -> shortener -> ads -> file
+            # Config used (see info.py): GATE_ENABLED, GATE_API_URL, GATE_API_KEY
+            # ---------------------------------------------------------------
+            verify = await wrap_with_gate(verify)
             if is_third_shortener:
                 howtodownload = settings.get("tutorial_3", TUTORIAL_3)
             else:
